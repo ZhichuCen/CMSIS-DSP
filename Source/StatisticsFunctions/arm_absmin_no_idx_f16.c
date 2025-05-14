@@ -113,11 +113,11 @@ ARM_DSP_ATTRIBUTE void arm_absmin_no_idx_f16(
         uint32_t blockSize,
         float16_t * pResult)
 {
-        float16_t cur_absmin, out;                     /* Temporary variables to store the output value. */\
+        _Float16 cur_absmin, out;                     /* Temporary variables to store the output value. */\
         uint32_t blkCnt;                     /* Loop counter */                                   \
                                                                                                             \
                                                                                           \
-  /* Load first input value that act as reference value for comparision */                                  \
+  /* Load first input value that act as reference value for comparison */                                  \
   out = *pSrc++;                                                                                            \
   out = ((_Float16)out > 0.0f16) ? out : -(_Float16)out;                                                                             \
                                                                                               \
@@ -194,7 +194,7 @@ ARM_DSP_ATTRIBUTE void arm_absmin_no_idx_f16(
 
 
 
-  /* Load first input value that act as reference value for comparision */
+  /* Load first input value that act as reference value for comparison */
   out = (_Float16)fabsf((float32_t)*pSrc++);
 
   /* Initialize blkCnt with number of samples */

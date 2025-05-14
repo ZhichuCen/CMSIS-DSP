@@ -41,6 +41,8 @@ def errorStr(id):
      return("Buffer tail corrupted")
   if id == 11:
      return("Close float error")
+  if id == 12:
+     return("Coverage error")
 
   return("Unknown error %d" % id)
 
@@ -99,19 +101,29 @@ class TextFormatter:
           if not elem.data["deprecated"]:
              kind = "Test"
              ident = " " * elem.ident
+             cov_ident = " " * (elem.ident -2)
              p=Fore.RED + "FAILED" + Style.RESET_ALL
              if passed == 1:
                 p= Fore.GREEN + "PASSED" + Style.RESET_ALL
-             if cycles > 0:
-                print("%s%s %s(%s - %d)%s : %s (cycles = %d)" % (ident,message,Style.BRIGHT,func,theId,Style.RESET_ALL,p,cycles))
-             else:
-                print("%s%s %s(%s - %d)%s : %s" % (ident,message,Style.BRIGHT,func,theId,Style.RESET_ALL,p))
+             if theError != 12:
+               # We display the test name only when there is no coverage error
+               # because a coverage error applies to the full test suite
+               # and not just to a test.
+               if cycles > 0:
+                  print("%s%s %s(%s - %d)%s : %s (cycles = %d)" % (ident,message,Style.BRIGHT,func,theId,Style.RESET_ALL,p,cycles))
+               else:
+                  print("%s%s %s(%s - %d)%s : %s" % (ident,message,Style.BRIGHT,func,theId,Style.RESET_ALL,p))
              if params:
                 print("%s %s" % (ident,params))
              if passed != 1:
-                print(Fore.RED + ("%s %s at line %d" % (ident, errorStr(theError), theLine)) + Style.RESET_ALL)
+                err_ident = ident
+                if theError == 12:
+                   err_ident = cov_ident
+                   print(Fore.RED + ("%s %s" % (err_ident, errorStr(theError))) + Style.RESET_ALL)
+                else:
+                   print(Fore.RED + ("%s %s at line %d" % (err_ident, errorStr(theError), theLine)) + Style.RESET_ALL)
                 if (len(errorDetail)>0):
-                   print(Fore.RED + ident + " " + errorDetail + Style.RESET_ALL)
+                   print(Fore.RED + err_ident + " " + errorDetail + Style.RESET_ALL)
 
       def pop(self):
           None
@@ -185,7 +197,6 @@ class HTMLFormatter:
                 print("</tr>")
 
              if passed != 1:
-
                 print("<tr><td colspan=4><font color=\"red\">%s at line %d</font></td></tr>" % (errorStr(theError), theLine))
                 if (len(errorDetail)>0):
                    print("<tr><td colspan=4><font color=\"red\">" + errorDetail + "</font></td></tr>")
@@ -363,7 +374,7 @@ def analyseResult(resultPath,root,results,embedded,benchmark,trace,formatter):
     calibration = 0
     if trace:
       # First cycle in the trace is the calibration data
-      # The noramlisation factor must be coherent with the C code one.
+      # The normalisation factor must be coherent with the C code one.
       calibration = int(getCyclesFromTrace(trace) / 20)
     formatter.start()
     path = []
@@ -398,6 +409,7 @@ def analyseResult(resultPath,root,results,embedded,benchmark,trace,formatter):
     for l in results:
         l = l.strip() 
         if not re.match(r'^.*D:[ ].*$',l):
+           #print(f"{l} -> {state}")
            if state == NORMAL:
               if len(l) > 0:
                  # Line starting with g or s is a suite or group.
@@ -417,7 +429,7 @@ def analyseResult(resultPath,root,results,embedded,benchmark,trace,formatter):
                        benchPath = os.path.join(benchmark,elem.fullPath(),"fullBenchmark.csv")
                        createMissingDir(benchPath)
                        if benchFile:
-                          printf("ERROR BENCH FILE %s ALREADY OPEN" % benchPath)
+                          print("ERROR BENCH FILE %s ALREADY OPEN" % benchPath)
                           benchFile.close()
                           benchFile=None
                        benchFile=open(benchPath,"w")
@@ -578,6 +590,7 @@ parser.add_argument('-o', nargs='?',type = str, default="Output", help="Output d
 parser.add_argument('-b', nargs='?',type = str, default="FullBenchmark", help="Full Benchmark dir path")
 parser.add_argument('-m', action='store_true', help="Mathematica output")
 parser.add_argument('-t', nargs='?',type = str, default=None, help="External trace file")
+parser.add_argument('--noerr', action='store_true', help="Exit code forced to 0")
 
 args = parser.parse_args()
 
@@ -601,7 +614,10 @@ if args.f is not None:
        with open(args.r,"r") as results:
           extractDataFiles(results,args.o)
 
-    sys.exit(resultStatus)
+    if args.noerr:
+       sys.exit(0)
+    else:
+       sys.exit(resultStatus)
     
 else:
     parser.print_help()

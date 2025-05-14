@@ -16,7 +16,11 @@ using namespace std;
 #ifdef BENCHMARK
 #define MEMSIZE 300000
 #else
+#if defined(ARM_MATH_NEON)
+#define MEMSIZE 40000000
+#else
 #define MEMSIZE 230000
+#endif
 #endif
 #endif
 
@@ -47,7 +51,7 @@ int testmain(const char *patterns)
 
            // There is also possibility of using "FPGA" io
            #if defined(EMBEDDED)
-              Client::FPGA io((const char*)testDesc,(const char*)patterns);
+              Client::FPGA io((const unsigned char*)testDesc,(const char*)patterns);
            #else
               Client::Semihosting io("../TestDesc.txt","../Patterns","../Output","../Parameters");
            #endif

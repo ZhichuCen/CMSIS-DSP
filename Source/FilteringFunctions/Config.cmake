@@ -1,6 +1,13 @@
 cmake_minimum_required (VERSION 3.14)
 
+if (FASTBUILD)
+  target_sources(CMSISDSP PRIVATE FilteringFunctions/FilteringFunctions.c)
 
+  if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    target_sources(CMSISDSP PRIVATE FilteringFunctions/FilteringFunctionsF16.c)
+  endif()
+
+else()
 
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_lms_norm_init_q31.c)
 
@@ -50,10 +57,12 @@ target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_correlate_opt_q7.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_correlate_q15.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_correlate_q31.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_correlate_q7.c)
+target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_f64.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_f32.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_f64.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_fast_q15.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_fast_q31.c)
+target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_init_f64.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_init_f32.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_init_f64.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_fir_decimate_init_q15.c)
@@ -124,6 +133,6 @@ target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_correlate_f16.c)
 target_sources(CMSISDSP PRIVATE FilteringFunctions/arm_levinson_durbin_f16.c)
 endif()
 
-
+endif()
 
 

@@ -14,14 +14,18 @@ option(NOAUTOVEC "Disable auto-vectorization" OFF)
 
 
 option(HOST "" ON)
-option(NEON "" OFF)
+option(NEON "" ON)
 option(NEONEXPERIMENTAL "" OFF)
-option(DISABLEFLOAT16 "" ON)
+option(DISABLEFLOAT16 "" OFF)
 add_subdirectory(../Source bin_dsp)
+target_compile_options(CMSISDSP PUBLIC -g)
+target_compile_definitions(CMSISDSP PRIVATE ARM_DSP_CUSTOM_CONFIG)
+target_include_directories(CMSISDSP PRIVATE .)
 
+target_compile_definitions(CMSISDSP PUBLIC ARM_DSP_TESTING)
 
 add_executable(test main.cpp
-	patterndata.c
+    patterndata.c
     testmain.cpp
     FrameworkSource/ArrayMemory.cpp
     FrameworkSource/Calibrate.cpp
@@ -115,15 +119,20 @@ add_executable(test main.cpp
     Source/Tests/UnaryTestsQ31.cpp
     Source/Tests/WindowTestsF32.cpp
     Source/Tests/WindowTestsF64.cpp
-	)
+    )
 
 if (NEON)
     target_sources(test PUBLIC 
         Source/Tests/TransformNeonCF32.cpp
-        Source/Tests/TransformNeonCF16.cpp
         Source/Tests/TransformNeonCQ31.cpp
         Source/Tests/TransformNeonCQ15.cpp
+        Source/Tests/BinaryTestsNeonF32.cpp
+        Source/Tests/BinaryTestsNeonQ31.cpp
+        Source/Tests/BinaryTestsNeonQ15.cpp
+        Source/Tests/BinaryTestsNeonQ7.cpp
         )
+    
+
 endif()
 
 if (NOT DISABLEFLOAT16)
@@ -148,6 +157,15 @@ if (NOT DISABLEFLOAT16)
            Source/Tests/TransformRF16.cpp
            Source/Tests/UnaryTestsF16.cpp
                 )
+
+    if (NEON)
+       target_sources(test PUBLIC 
+        Source/Tests/TransformNeonCF16.cpp
+        Source/Tests/BinaryTestsNeonF16.cpp
+        )
+    
+
+endif()
 endif()
 
 target_include_directories(test PUBLIC FrameworkInclude
@@ -157,47 +175,78 @@ target_include_directories(test PUBLIC FrameworkInclude
 
 target_compile_definitions(test PUBLIC EMBEDDED NOTIMING)
 
-target_compile_options(test PUBLIC -Wsign-compare 
-        -Wdouble-promotion 
-        -DNDEBUG 
-        -Wall 
-        -Wextra  
-        -O3 
-        -Wno-packed 
-        -Wno-missing-variable-declarations  
-        -Wno-missing-noreturn 
-        -Wno-sign-conversion 
-        -Wno-nonportable-include-path 
-        -Wno-reserved-id-macro 
-        -Wno-unused-macros 
-        -Wno-documentation-unknown-command 
-        -Wno-documentation 
-        -Wno-parentheses-equality 
-        -Wno-reserved-identifier
+target_compile_options(test PUBLIC -Wsign-compare
+        -Wdouble-promotion
+        -DNDEBUG
+        -Wall
+    -Wextra
+        -O3
+    -Wno-packed
+        -Wno-missing-noreturn
+        -Wno-sign-conversion
+        -Wno-unused-macros
         -ffunction-sections
+        -fdata-sections
         -march=armv8.2-a+fp16fml
         )
 
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
 target_compile_options(CMSISDSP PRIVATE -Wsign-compare 
-        -Wdouble-promotion 
-        -DNDEBUG 
-        -Wall 
-        -Wextra  
-        -O3 
-        -ffast-math
-        -Wno-packed 
-        -Wno-missing-variable-declarations 
-        -Wno-missing-noreturn 
-        -Wno-sign-conversion 
-        -Wno-nonportable-include-path 
-        -Wno-reserved-id-macro 
-        -Wno-unused-macros 
-        -Wno-documentation-unknown-command 
-        -Wno-documentation 
-        -Wno-parentheses-equality 
-        -Wno-reserved-identifier
-        -ffunction-sections
-        -march=armv8.2-a+fp16fml)
+ -Wdouble-promotion 
+ -Wfloat-conversion 
+ -DNDEBUG 
+ -Wall 
+ -Wextra  
+ -std=c11 
+ -O3
+ -ffast-math
+ -Wno-packed 
+ -Wno-missing-prototypes 
+ -Wno-missing-noreturn 
+ -Wno-sign-conversion 
+ -Wno-unused-macros 
+ -flax-vector-conversions
+ -Wno-maybe-uninitialized
+ -ffunction-sections
+ -fdata-sections
+ -march=armv8.2-a+fp16fml
+ -Wmissing-prototypes
+ )
+
+else()
+
+target_compile_option(CMSISDSP PRIVATE -Wsign-compare
+  -Wdouble-promotion
+  -Wfloat-conversion
+  -DNDEBUG
+  -Wall
+  -Wextra
+  -Werror
+  -std=c11
+  -O3
+  -ffast-math
+  -Wno-packed
+  -Wno-missing-variable-declarations
+  -Wno-missing-prototypes
+  -Wno-missing-noreturn
+  -Wno-sign-conversion
+  -Wno-nonportable-include-path
+  -Wno-reserved-id-macro
+  -Wno-unused-macros
+  -Wno-documentation-unknown-command
+  -Wno-documentation
+  -Wno-parentheses-equality
+  -Wno-reserved-identifier
+  -ffunction-sections
+  -fdata-sections
+  -march=armv8.2-a+fp16fml
+  -Wmissing-prototypes
+)
+
+endif()
+
 
 target_link_libraries(test PUBLIC CMSISDSP)
 
